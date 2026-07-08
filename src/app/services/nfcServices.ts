@@ -174,9 +174,20 @@ export const startNFCScan = (
 
           // Si no se encontró ningún dato legible, usar el serial number
           if (!nfcData.rawData && serialNumber) {
-            nfcData.rawData = `Serial: ${serialNumber}`;
             nfcData.type = 'SERIAL';
-            nfcData.id = serialNumber;
+            // Las aplicaciones de NFC suelen convertir el UID hexadecimal a decimal (ej. 8 dígitos)
+            const hexParts = serialNumber.split(':');
+            if (hexParts.length >= 4) {
+              // Tomamos los primeros 4 bytes
+              const hex4 = hexParts.slice(0, 4).join('');
+              const decimalSerial = parseInt(hex4, 16).toString(); // Esto generará los 8 dígitos numéricos
+              
+              nfcData.id = decimalSerial;
+              nfcData.rawData = `Hex: ${serialNumber} | Dec: ${decimalSerial}`;
+            } else {
+              nfcData.id = serialNumber.replace(/:/g, ''); 
+              nfcData.rawData = `Serial: ${serialNumber}`;
+            }
           }
 
           console.log('📱 NFC - Datos procesados:', nfcData);
