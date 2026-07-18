@@ -101,13 +101,24 @@ export const startNFCScan = (
           
           // Procesar los registros NFC
           let nfcData: NFCData = {
-            id: serialNumber || 'unknown',
+            id: '', // Ya no usamos serialNumber como fallback para evitar datos erróneos
             type: 'UNKNOWN',
             rawData: '',
             serialNumber: serialNumber,
             timestamp: new Date(),
             records: message.records,
           };
+
+          if (!message.records || message.records.length === 0) {
+            const errorMsg = '❌ Etiqueta NFC vacía. No contiene ninguna información grabada.';
+            console.warn(errorMsg);
+            if (onError) onError(errorMsg);
+            resolve({
+              success: false,
+              error: errorMsg,
+            });
+            return;
+          }
 
           // Recorrer todos los registros del mensaje
           for (const record of message.records) {
@@ -178,7 +189,7 @@ export const startNFCScan = (
 
           // Si no se encontró ningún dato legible o está vacía, rechazar
           if (!rawText) {
-            const errorMsg = '❌ Etiqueta NFC vacía o sin formato de texto válido.';
+            const errorMsg = '❌ La etiqueta NFC está vacía o no tiene un texto válido guardado.';
             console.warn(errorMsg);
             if (onError) onError(errorMsg);
             resolve({
@@ -191,7 +202,7 @@ export const startNFCScan = (
           // Validar que contenga SOLO NÚMEROS
           // Expresión regular que verifica que el string tenga desde 1 hasta múltiples dígitos numéricos exclusivamente.
           if (!/^\d+$/.test(rawText)) {
-            const errorMsg = `❌ Etiqueta inválida. Contiene letras o caracteres especiales: "${rawText}". Solo se permiten etiquetas con números (seriales).`;
+            const errorMsg = `❌ Etiqueta inválida ("${rawText}"). Contiene letras o símbolos. Solo se permiten etiquetas con números (seriales).`;
             console.warn(errorMsg);
             if (onError) onError(errorMsg);
             resolve({
