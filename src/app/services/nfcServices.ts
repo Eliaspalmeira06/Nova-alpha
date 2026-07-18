@@ -44,7 +44,7 @@ export const startNFCScan = (
     }
 
     const isSupported = 'NDEFReader' in window;
-    
+
     if (!isSupported) {
       const errorMsg = '❌ NFC no está soportado en este navegador. Usa Chrome en Android.';
       console.error(errorMsg);
@@ -76,13 +76,13 @@ export const startNFCScan = (
 
     try {
 
-        if (onProgress) onProgress('📱 Iniciando lector NFC...');
-      
+      if (onProgress) onProgress('📱 Iniciando lector NFC...');
+
       nfcAbortController = new AbortController();
       nfcReader = new (window as any).NDEFReader();
-      
+
       nfcScanningActive = true;
-      
+
       await nfcReader.scan({
         signal: nfcAbortController.signal,
       });
@@ -93,12 +93,12 @@ export const startNFCScan = (
       nfcReader.addEventListener('reading', ({ message, serialNumber }: any) => {
         try {
           nfcScanningActive = false;
-          
+
           if (onProgress) onProgress('✅ ¡Etiqueta NFC detectada! Procesando...');
-          
+
           console.log('📱 NFC - Serial Number:', serialNumber);
           console.log('📱 NFC - Message:', message);
-          
+
           // Procesar los registros NFC
           let nfcData: NFCData = {
             id: '', // Ya no usamos serialNumber como fallback para evitar datos erróneos
@@ -124,37 +124,37 @@ export const startNFCScan = (
           for (const record of message.records) {
             const recordType = record.recordType || record.type;
             console.log(`📱 NFC - Record Type: ${recordType}`);
-            
+
             // Procesar diferentes tipos de registros
             if (recordType === 'text') {
               try {
                 const textDecoder = new TextDecoder(record.encoding || 'utf-8');
                 const textData = textDecoder.decode(record.data);
                 console.log('📱 NFC - Texto decodificado:', textData);
-                
+
                 nfcData.rawData = textData;
                 nfcData.type = 'TEXT';
-                
+
                 // Intentar extraer ID del texto
-                const idMatch = textData.match(/ID[:#]\s*([A-Z0-9-]+)/i) || 
-                               textData.match(/EMP[:#]\s*([A-Z0-9-]+)/i) ||
-                               textData.match(/SERIAL[:#]\s*([A-Z0-9-]+)/i);
-                
+                const idMatch = textData.match(/ID[:#]\s*([A-Z0-9-]+)/i) ||
+                  textData.match(/EMP[:#]\s*([A-Z0-9-]+)/i) ||
+                  textData.match(/SERIAL[:#]\s*([A-Z0-9-]+)/i);
+
                 if (idMatch) {
                   nfcData.id = idMatch[1];
                 } else {
-                  nfcData.id=textData.trim();
+                  nfcData.id = textData.trim();
                 }
               } catch (decodeError) {
                 console.error('Error decodificando texto:', decodeError);
               }
-            } 
+            }
             else if (recordType === 'url') {
               try {
                 const textDecoder = new TextDecoder('utf-8');
                 const urlData = textDecoder.decode(record.data);
                 console.log('📱 NFC - URL:', urlData);
-                
+
                 nfcData.rawData = urlData;
                 nfcData.type = 'URL';
               } catch (decodeError) {
@@ -168,7 +168,7 @@ export const startNFCScan = (
                   const textDecoder = new TextDecoder('utf-8');
                   const mimeData = textDecoder.decode(record.data);
                   console.log('📱 NFC - MIME Text:', mimeData);
-                  
+
                   nfcData.rawData = mimeData;
                   nfcData.type = 'MIME';
                 }
@@ -213,16 +213,14 @@ export const startNFCScan = (
           }
 
           console.log('📱 NFC - Datos procesados:', nfcData);
-          
-          if (onProgress) onProgress(`✅ Lectura completada: ${nfcData.id}`);
-          
+
           if (onSuccess) onSuccess(nfcData);
           resolve({
             success: true,
             data: nfcData,
             message: 'Lectura NFC exitosa',
           });
-          
+
         } catch (processingError) {
           console.error('Error procesando lectura NFC:', processingError);
           const errorMsg = 'Error al procesar los datos NFC';
@@ -266,7 +264,7 @@ export const startNFCScan = (
     } catch (error: any) {
       nfcScanningActive = false;
       let errorMsg = '❌ Error al iniciar el lector NFC';
-      
+
       // Manejar de errores específicos
       if (error.message?.includes('NotAllowedError')) {
         errorMsg = '❌ Permiso NFC denegado. Acepta los permisos para continuar.';
@@ -277,7 +275,7 @@ export const startNFCScan = (
       } else if (error.message) {
         errorMsg = `❌ Error: ${error.message}`;
       }
-      
+
       console.error(errorMsg);
       if (onError) onError(errorMsg);
       resolve({
@@ -317,7 +315,7 @@ export const writeToNFCTag = async (
     }
 
     if (onProgress) onProgress('📱 Iniciando escritura NFC...');
-    
+
     const ndef = new (window as any).NDEFReader();
     await ndef.write({
       records: [
@@ -327,7 +325,7 @@ export const writeToNFCTag = async (
         },
       ],
     });
-    
+
     if (onProgress) onProgress('✅ Escritura NFC completada');
     return { success: true };
   } catch (error: any) {
@@ -357,11 +355,11 @@ export const checkNFCPermissions = async (): Promise<{
         error: 'API de permisos no disponible',
       };
     }
-    
-    const permissionStatus = await (navigator as any).permissions.query({ 
-      name: 'nfc' as any 
+
+    const permissionStatus = await (navigator as any).permissions.query({
+      name: 'nfc' as any
     });
-    
+
     return {
       granted: permissionStatus.state === 'granted',
       state: permissionStatus.state,
@@ -390,13 +388,13 @@ export const useNFC = () => {
     const checkSupport = async () => {
       const supported = isNFCSupported();
       setIsSupported(supported);
-      
+
       if (supported) {
         const permission = await checkNFCPermissions();
         setPermissionGranted(permission.granted);
       }
     };
-    
+
     checkSupport();
   }, []);
 
