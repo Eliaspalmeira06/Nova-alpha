@@ -173,9 +173,25 @@ export const startNFCScan = (
             }
           }
 
-          // Si no se encontró ningún dato legible, rechazar la lectura
-          if (!nfcData.rawData || nfcData.rawData.trim() === '') {
+          // Extraer el texto y limpiarlo de espacios
+          const rawText = nfcData.rawData ? nfcData.rawData.trim() : '';
+
+          // Si no se encontró ningún dato legible o está vacía, rechazar
+          if (!rawText) {
             const errorMsg = '❌ Etiqueta NFC vacía o sin formato de texto válido.';
+            console.warn(errorMsg);
+            if (onError) onError(errorMsg);
+            resolve({
+              success: false,
+              error: errorMsg,
+            });
+            return;
+          }
+
+          // Validar que contenga SOLO NÚMEROS
+          // Expresión regular que verifica que el string tenga desde 1 hasta múltiples dígitos numéricos exclusivamente.
+          if (!/^\d+$/.test(rawText)) {
+            const errorMsg = `❌ Etiqueta inválida. Contiene letras o caracteres especiales: "${rawText}". Solo se permiten etiquetas con números (seriales).`;
             console.warn(errorMsg);
             if (onError) onError(errorMsg);
             resolve({
